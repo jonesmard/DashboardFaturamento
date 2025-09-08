@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Vendas</title>
+    <!-- Adicionado para PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <!-- Links de bibliotecas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container-shadow {
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .radial-progress {
+            position: relative;
+            display: inline-block;
+            text-align: center;
+        }
+        .radial-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transition: stroke-dashoffset 0.5s ease-out;
+            transform: rotate(-90deg);
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white rounded-2xl container-shadow p-6 sm:p-8 w-full max-w-6xl">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-6 text-center">Dashboard de Vendas</h1>
+        <div id="auth-status" class="text-center text-sm mb-4">Carregando...</div>
+
+        <!-- Main Dashboard View -->
+        <div id="main-view" class="space-y-6">
+            
+            <!-- Monthly Goals September 2025 -->
+            <div class="bg-sky-50 p-6 rounded-2xl container-shadow mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Metas para o Mês de Setembro de 2025</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-sky-100 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center container-shadow">
+                        <span class="text-sm font-semibold text-gray-700">Primeira Meta</span>
+                        <p id="meta1" class="text-xl sm:text-2xl font-bold text-sky-700 mt-2">R$ 0,00</p>
+                        <p id="meta1Status" class="text-xs mt-1 font-semibold text-gray-500"></p>
+                    </div>
+                    <div class="bg-sky-200 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center container-shadow">
+                        <span class="text-sm font-semibold text-gray-700">Segunda Meta</span>
+                        <p id="meta2" class="text-xl sm:text-2xl font-bold text-sky-700 mt-2">R$ 0,00</p>
+                        <p id="meta2Status" class="text-xs mt-1 font-semibold text-gray-500"></p>
+                    </div>
+                    <div class="bg-sky-300 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center container-shadow">
+                        <span class="text-sm font-semibold text-gray-700">Terceira Meta</span>
+                        <p id="meta3" class="text-xl sm:text-2xl font-bold text-sky-700 mt-2">R$ 0,00</p>
+                        <p id="meta3Status" class="text-xs mt-1 font-semibold text-gray-500"></p>
+                    </div>
+                </div>
+            </div>
+            ---
+            <!-- KPI Cards Setembro -->
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Faturamento de 09/2024</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-500 text-white rounded-xl p-4 sm:p-5 flex flex-col justify-between container-shadow">
+                    <span class="text-sm font-semibold opacity-80">Faturamento Set. (Equipe)</span>
+                    <p id="totalFaturamentoSetembroEquipe" class="text-2xl sm:text-3xl font-bold mt-2">R$ 0,00</p>
+                    <div class="text-xs mt-2 opacity-70">Vendas da equipe</div>
+                </div>
+                <div class="bg-orange-500 text-white rounded-xl p-4 sm:p-5 flex flex-col justify-between container-shadow">
+                    <span class="text-sm font-semibold opacity-80">Vendas OTA's + Site (Setembro)</span>
+                    <p id="totalFaturamentoOtasSetembro" class="text-2xl sm:text-3xl font-bold mt-2">R$ 0,00</p>
+                    <div class="text-xs mt-2 opacity-70">Faturamento dos portais</div>
+                </div>
+                <div class="bg-purple-500 text-white rounded-xl p-4 sm:p-5 flex flex-col justify-between container-shadow">
+                    <span class="text-sm font-semibold opacity-80">Valor Total Geral (Setembro)</span>
+                    <p id="totalGeralSetembro" class="text-2xl sm:text-3xl font-bold mt-2">R$ 0,00</p>
+                    <div class="text-xs mt-2 opacity-70">Central + OTA's + Site</div>
+                </div>
+                <div class="bg-emerald-500 text-white rounded-xl p-4 sm:p-5 flex flex-col justify-between container-shadow">
+                    <span class="text-sm font-semibold opacity-80">Inflação (Setembro)</span>
+                    <p id="inflacaoSetembro" class="text-2xl sm:text-3xl font-bold mt-2">0.00%</p>
+                    <div class="text-xs mt-2 opacity-70">Valor da inflação</div>
+                </div>
+            </div>
+
+            <!-- Radial Progress & Diferença Anual -->
+            <div class="bg-gray-50 p-6 rounded-2xl mb-6 container-shadow flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div class="flex-1 w-full flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <div class="flex flex-col items-center">
+                        <div class="radial-progress text-center" style="width: 150px; height: 150px;">
+                            <svg class="w-full h-full">
+                                <circle class="radial-progress-bar" cx="75" cy="75" r="65" stroke-width="12" stroke="#e5e7eb" fill="none"></circle>
+                                <circle id="progressCircle" class="radial-progress-bar" cx="75" cy="75" r="65" stroke-width="12" stroke="#10b981" fill="none" style="stroke-dasharray: 408.4; stroke-dashoffset: 408.4;"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span id="percentualAtingido" class="text-3xl font-bold text-gray-800">0%</span>
+                            </div>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">Meta 1 Atingida (Setembro)</p>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <p class="text-lg font-bold text-gray-800">Diferença da Meta 1 (Set/2025) vs Faturamento Equipe (Set/2024)</p>
+                        <p id="diferencaMeta1" class="text-2xl text-emerald-600 font-extrabold mt-1"></p>
+                    </div>
+                </div>
+                <!-- Nova seção de explicação do cálculo -->
+                <div class="bg-white p-4 rounded-xl container-shadow">
+                    <p class="font-bold text-gray-800 text-sm">Cálculo da Primeira Meta (Set/2025):</p>
+                    <ul class="text-gray-600 text-sm mt-2 space-y-1">
+                        <li>Faturamento Equipe (Set/24): R$ 211.701,57</li>
+                        <li>Inflação: 5%</li>
+                        <li>Acréscimo: 15%</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Monthly Goals August 2024 -->
+            <div class="bg-gray-50 p-6 rounded-2xl container-shadow mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Faturamento de Agosto de 2024</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div class="bg-sky-100 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center container-shadow">
+                        <span class="text-sm font-semibold text-gray-700">Faturamento Equipe (Ago/24)</span>
+                        <p id="faturamentoAgostoEquipe" class="text-xl sm:text-2xl font-bold text-sky-700 mt-2">R$ 0,00</p>
+                    </div>
+                    <div class="bg-sky-200 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center container-shadow">
+                        <span class="text-sm font-semibold text-gray-700">Vendas OTA's + Site (Ago/24)</span>
+                        <p id="faturamentoAgostoOtas" class="text-xl sm:text-2xl font-bold text-sky-700 mt-2">R$ 0,00</p>
+                    </div>
+                    <div class="bg-sky-300 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center container-shadow">
+                        <span class="text-sm font-semibold text-gray-700">Total Geral (Ago/24)</span>
+                        <p id="faturamentoAgostoTotalGeral" class="text-xl sm:text-2xl font-bold text-sky-700 mt-2">R$ 0,00</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-6">
+                <button id="show-details-btn" class="bg-gray-800 text-white rounded-full py-3 px-8 font-semibold transition-transform transform hover:scale-105">
+                    Mais Detalhes
+                </button>
+            </div>
+        </div>
+
+        <!-- Details Dashboard View -->
+        <div id="details-view" class="hidden space-y-6">
+            <div class="text-center mt-6 mb-6">
+                <button id="hide-details-btn" class="bg-gray-800 text-white rounded-full py-3 px-8 font-semibold transition-transform transform hover:scale-105">
+                    Voltar
+                </button>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Detalhes de Faturamento (Setembro)</h2>
+            
+            <div class="bg-gray-50 p-6 rounded-2xl container-shadow">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Faturamento por Canal (OTA's + Site + Equipe)</h3>
+                <div id="otaSalesList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <!-- OTA cards will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Dados de faturamento de agosto de 2024
+        const faturamentoAgostoEquipe = 238043.35;
+        const faturamentoAgostoOtas = 522594.29 - faturamentoAgostoEquipe;
+        const faturamentoAgostoTotalGeral = 522594.29;
+
+        // Dados de faturamento de setembro de 2024
+        const faturamentoSetembroEquipe = 211701.57;
+        const faturamentoSetembroOTAsite = 138149.51;
+        const faturamentoSetembroTotalGeral = faturamentoSetembroEquipe + faturamentoSetembroOTAsite;
+        
+        // Detalhamento de faturamento de setembro por funcionário (Equipe)
+        const dadosSetembroEquipe = {
+            "Fernanda": 29624.35,
+            "Joao Victor": 35729.84,
+            "Juliana": 85604.94,
+            "Julio Samoel": 51307.88,
+            "Ranyelle": 9434.56
+        };
+
+        // Detalhamento de faturamento de setembro por canal (OTAs + Site)
+        const dadosSetembroOtas = {
+            "Booking": 24122.50,
+            "Expedia": 2397.60,
+            "Hbook": 105968.41,
+            "Hotels.com": 5661.00
+        };
+
+        // Valores de metas para setembro de 2025
+        const inflacao2024 = 0.05; // Placeholder for 2024 inflation
+        const baseCalculoMeta = faturamentoSetembroEquipe * (1 + inflacao2024);
+        const metasCalculadasSetembro = {
+            meta1: baseCalculoMeta * 1.15,
+            meta2: (baseCalculoMeta * 1.15) * 1.25,
+            meta3: ((baseCalculoMeta * 1.15) * 1.25) * 1.25
+        };
+
+        // Função para formatar números em moeda BRL
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        };
+        
+        const formatPercentage = (value) => {
+            return new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+        }
+
+        // Função para renderizar o dashboard principal
+        const renderMainDashboard = () => {
+            document.getElementById('main-view').classList.remove('hidden');
+            document.getElementById('details-view').classList.add('hidden');
+
+            // Exibe os valores totais de setembro
+            document.getElementById('totalFaturamentoSetembroEquipe').innerText = formatCurrency(faturamentoSetembroEquipe);
+            document.getElementById('totalFaturamentoOtasSetembro').innerText = formatCurrency(faturamentoSetembroOTAsite);
+            document.getElementById('totalGeralSetembro').innerText = formatCurrency(faturamentoSetembroTotalGeral);
+            
+            // Exibe os valores de agosto
+            document.getElementById('faturamentoAgostoEquipe').innerText = formatCurrency(faturamentoAgostoEquipe);
+            document.getElementById('faturamentoAgostoOtas').innerText = formatCurrency(faturamentoAgostoOtas);
+            document.getElementById('faturamentoAgostoTotalGeral').innerText = formatCurrency(faturamentoAgostoTotalGeral);
+
+            // Exibe a inflação de setembro
+            document.getElementById('inflacaoSetembro').innerText = `${(inflacao2024 * 100).toFixed(2)}%`;
+            
+            // Exibe as metas de setembro
+            document.getElementById('meta1').innerText = formatCurrency(metasCalculadasSetembro.meta1);
+            document.getElementById('meta2').innerText = formatCurrency(metasCalculadasSetembro.meta2);
+            document.getElementById('meta3').innerText = formatCurrency(metasCalculadasSetembro.meta3);
+
+            // Compara faturamento com as metas
+            const faturamentoParaComparacao = faturamentoSetembroEquipe;
+            document.getElementById('meta1Status').innerText = faturamentoParaComparacao >= metasCalculadasSetembro.meta1 ? 'Meta Atingida' : 'Meta não atingida';
+            document.getElementById('meta2Status').innerText = faturamentoParaComparacao >= metasCalculadasSetembro.meta2 ? 'Meta Atingida' : 'Meta não atingida';
+            document.getElementById('meta3Status').innerText = faturamentoParaComparacao >= metasCalculadasSetembro.meta3 ? 'Meta Atingida' : 'Meta não atingida';
+
+            // Inverte os campos e remove o valor dos 82.82%
+            const percentualCrescimentoMeta = ((metasCalculadasSetembro.meta1 / faturamentoSetembroEquipe) - 1);
+            document.getElementById('percentualAtingido').innerText = formatPercentage(percentualCrescimentoMeta);
+            
+            // Remove o valor do campo externo
+            document.getElementById('diferencaMeta1').innerText = '';
+            document.getElementById('diferencaMeta1').classList.remove('text-red-500', 'text-emerald-600');
+
+            const progress = Math.min(100, percentualCrescimentoMeta * 100);
+            const progressCircle = document.getElementById('progressCircle');
+            const circumference = 2 * Math.PI * 65;
+            progressCircle.style.strokeDashoffset = circumference - (circumference * progress / 100);
+        };
+
+        // Função para renderizar o dashboard de detalhes
+        const renderDetailsDashboard = () => {
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('details-view').classList.remove('hidden');
+
+            // Faturamento por Canal (OTAs + Site + Equipe)
+            const otaListContainer = document.getElementById('otaSalesList');
+            otaListContainer.innerHTML = '';
+            
+            const combinedSales = {
+                "Vendas da Equipe": faturamentoSetembroEquipe,
+                ...dadosSetembroOtas
+            };
+
+            for (const channel in combinedSales) {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl p-4 sm:p-5 container-shadow";
+                card.innerHTML = `
+                    <p class="text-sm text-gray-500 font-medium capitalize">${channel}</p>
+                    <p class="text-xl sm:text-2xl font-bold text-gray-800 mt-1">${formatCurrency(combinedSales[channel])}</p>
+                `;
+                otaListContainer.appendChild(card);
+            }
+        };
+
+        // Event listeners para alternar as views
+        document.getElementById('show-details-btn').addEventListener('click', renderDetailsDashboard);
+        document.getElementById('hide-details-btn').addEventListener('click', renderMainDashboard);
+
+        // Firebase Firestore setup
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        const authStatus = document.getElementById('auth-status');
+        let userId;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                authStatus.innerText = `Autenticado como: ${userId}`;
+                await initializeData(userId);
+                renderMainDashboard();
+            } else {
+                try {
+                    const anonymousUser = await signInAnonymously(auth);
+                    userId = anonymousUser.user.uid;
+                    authStatus.innerText = `Autenticado como (anônimo): ${userId}`;
+                    await initializeData(userId);
+                    renderMainDashboard();
+                } catch (error) {
+                    console.error("Erro na autenticação anônima:", error);
+                    authStatus.innerText = "Falha na autenticação.";
+                }
+            }
+        });
+
+        // Function to initialize data in Firestore
+        const initializeData = async (uid) => {
+            const userDocRef = doc(db, `/artifacts/${appId}/users/${uid}/dashboard`, 'vendas');
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+                await setDoc(userDocRef, {
+                    faturamentoAgostoEquipe: faturamentoAgostoEquipe,
+                    faturamentoAgostoOtas: faturamentoAgostoOtas,
+                    faturamentoAgostoTotalGeral: faturamentoAgostoTotalGeral,
+                    faturamentoSetembroEquipe: faturamentoSetembroEquipe,
+                    faturamentoSetembroOTAsite: faturamentoSetembroOTAsite,
+                    faturamentoSetembroTotalGeral: faturamentoSetembroTotalGeral,
+                    dadosSetembroEquipe: dadosSetembroEquipe,
+                    dadosSetembroOtas: dadosSetembroOtas,
+                    metasCalculadasSetembro: metasCalculadasSetembro,
+                    inflacao2024: inflacao2024
+                });
+            } else {
+                const data = userDocSnap.data();
+            }
+        };
+        
+        window.onload = function() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(auth, __initial_auth_token).catch((error) => {
+                    console.error("Erro ao autenticar com token customizado:", error);
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMainDashboard();
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').then(registration => {
+                    console.log('Service Worker registrado com sucesso:', registration);
+                }).catch(err => {
+                    console.log('Falha no registro do Service Worker:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
