@@ -2,7 +2,6 @@ const CACHE_NAME = 'dashboard-cache-v1';
 const urlsToCache = [
     '/',
     '/index.html',
-    '/dashboard.html',
     '/manifest.json',
     'https://cdn.tailwindcss.com',
     'https://cdn.jsdelivr.net/npm/chart.js',
